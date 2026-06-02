@@ -1,6 +1,15 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <style name="Theme.GymLoga" parent="android:Theme.Material.Light.NoActionBar">
+    <!--
+      Dark, edge-to-edge base. The parent is a *dark* system theme (the original
+      used Material.Light, which is what made the status bar white). The window
+      background is black so there is no white launch flash before Compose draws,
+      and the bars are transparent — MainActivity calls enableEdgeToEdge() and
+      forces light (white) bar icons at runtime to match the AMOLED surface.
+    -->
+    <style name="Theme.GymLogger" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@android:color/black</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
     </style>
 </resources>

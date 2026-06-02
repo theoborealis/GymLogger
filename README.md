@@ -1,42 +1,37 @@
-# GymLoga
+# GymLogger
 
-GymLoga is a minimalist, 100% private, and open-source weightlifting logger. 
+GymLogger is a minimalist, 100% private, open-source weightlifting logger.
 
-I built this app because I wanted a tracking tool that stayed out of my way, something that mirrors the speed and simplicity of a physical paper log while providing the modern benefits of automatic progress tracking and PR calculations. It's designed for lifters who prefer efficiency over complex, data-heavy "typical" fitness apps.
+It's a fork of [GymLoga](https://github.com/GymLoga/GymLoga-Android) by Michael Bosse, redesigned around **Material You** (inspired by [Book Story](https://github.com/Acclorite/book-story)) with a true-black **AMOLED** dark theme, and reworked so your log **saves itself** — there is no save button.
 
 ## Features
 
-- **Blazing Fast Entry**: Log your sets with simple shorthand like `135x5x3` or `20x10`.
-- **Automatic PR Tracking**: The app identifies your Personal Records (PRs) as you log.
-- **Strength Analytics**: View your exercise history and estimated One Rep Max (1RM) progress.
-- **Privacy First**: No tracking, no ads, and no cloud syncing. Your data never leaves your device.
-- **Modern Native Feel**: Built with Kotlin and Jetpack Compose for a fast, responsive Android experience.
+- **Auto-saving log**: Everything you add to a day is written instantly. Add an exercise, a set, or a note and it's already saved — no "Save" button, no lost sessions.
+- **Blazing fast entry**: Log your sets with simple shorthand like `135x5x3` or `20x10`.
+- **Automatic PR tracking**: The app identifies your Personal Records (PRs) as you log.
+- **Strength analytics**: View your exercise history and estimated One Rep Max (1RM) progress.
+- **Material You**: Dynamic color on Android 12+ with a tasteful fallback palette, on a pure-black AMOLED surface.
+- **Privacy first**: No tracking, no ads, no cloud syncing. Your data never leaves your device.
+- **Modern native feel**: Built with Kotlin and Jetpack Compose (Material 3).
 
-## Roadmap
-- **Initial Release**
-- **Version 1.1**
-  - Data Export / Import
-- **Version 2.0**
-  - Optional web sync  
+## Building from source
 
-## Getting Started
-
-### Installation
-You can build the app from source to install it on your device.
-
-### Building from Source
-If you are on a Linux system (like Debian), ensure you have the Android SDK installed, then run:
+The repository ships a Nix shell that provides a pinned JDK 17 + Android SDK, so no global Android tooling is required:
 
 ```bash
-export ANDROID_HOME=$HOME/android-sdk
-export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
-./gradlew assembleDebug
+nix-shell --run './gradlew :app:assembleDebug'
 ```
 
-The debug APK will be generated at `app/build/outputs/apk/debug/app-debug.apk`.
+Run the unit tests with:
+
+```bash
+nix-shell --run './gradlew :app:testDebugUnitTest'
+```
+
+The debug APK is generated at `app/build/outputs/apk/debug/app-debug.apk`.
+
+If you already have a local Android SDK (`ANDROID_HOME` set, build-tools 34, platform 34), the standard `./gradlew assembleDebug` works too.
 
 ## License
 
-This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0) or later**. See the AGPL-3.0-or-later file for details. 
-
-I hope this app helps others who, like me, are looking for a simple and private way to track their strength journey.
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0) or later**. See the AGPL-3.0-or-later file for details. As a fork, it preserves the original copyright and license of GymLoga.

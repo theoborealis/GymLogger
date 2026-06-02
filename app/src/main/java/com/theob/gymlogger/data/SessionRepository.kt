@@ -14,7 +14,7 @@
 * You should have received a copy of the GNU Affero General Public License
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-package com.mbosse.gymloga.data
+package com.theob.gymlogger.data
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -31,10 +31,10 @@ import kotlinx.serialization.json.*
 import java.io.InputStream
 import java.io.OutputStream
 
-val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "gymloga_prefs")
+val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "gymlogger_prefs")
 
 class SessionRepository(private val context: Context) {
-    private val SESSIONS_KEY = stringPreferencesKey("gymloga:sessions")
+    private val SESSIONS_KEY = stringPreferencesKey("gymlogger:sessions")
 
     private fun parseData(json: String): GymLogaData {
         val element = Json.parseToJsonElement(json)
@@ -59,6 +59,14 @@ class SessionRepository(private val context: Context) {
         }
     }
 
+    /** Read the current persisted data inside a transaction, tolerating corruption. */
+    private fun readPrefs(preferences: Preferences): GymLogaData =
+        try {
+            preferences[SESSIONS_KEY]?.let { parseData(it) } ?: GymLogaData(sessions = emptyList())
+        } catch (e: Exception) {
+            GymLogaData(sessions = emptyList())
+        }
+
     private val dataFlow: Flow<GymLogaData> = context.dataStore.data.map { preferences ->
         val json = preferences[SESSIONS_KEY] ?: "[]"
         try {
@@ -75,37 +83,48 @@ class SessionRepository(private val context: Context) {
 
     suspend fun saveSessions(sessions: List<Session>) {
         context.dataStore.edit { preferences ->
-            val current = try {
-                preferences[SESSIONS_KEY]?.let { parseData(it) }
-                    ?: GymLogaData(sessions = emptyList())
-            } catch (e: Exception) {
-                GymLogaData(sessions = emptyList())
+            val current = readPrefs(preferences)
+            preferences[SESSIONS_KEY] = Json.encodeToString(current.copy(sessions = sessions))
+        }
+    }
+
+    /**
+     * Insert or replace a single session by id, atomically. This is the backbone
+     * of auto-save: the read-modify-write happens inside the DataStore edit
+     * transaction, so rapid successive edits never race or duplicate.
+     */
+    suspend fun upsertSession(session: Session) {
+        context.dataStore.edit { preferences ->
+            val current = readPrefs(preferences)
+            val index = current.sessions.indexOfFirst { it.id == session.id }
+            val updated = if (index >= 0) {
+                current.sessions.toMutableList().also { it[index] = session }
+            } else {
+                listOf(session) + current.sessions
             }
-            val data = current.copy(sessions = sessions)
-            preferences[SESSIONS_KEY] = Json.encodeToString(data)
+            preferences[SESSIONS_KEY] = Json.encodeToString(current.copy(sessions = updated))
+        }
+    }
+
+    /** Remove a session by id, atomically. */
+    suspend fun deleteSession(id: String) {
+        context.dataStore.edit { preferences ->
+            val current = readPrefs(preferences)
+            preferences[SESSIONS_KEY] =
+                Json.encodeToString(current.copy(sessions = current.sessions.filter { it.id != id }))
         }
     }
 
     suspend fun saveExerciseDefinitions(defs: List<ExerciseDefinition>) {
         context.dataStore.edit { preferences ->
-            val current = try {
-                preferences[SESSIONS_KEY]?.let { parseData(it) }
-                    ?: GymLogaData(sessions = emptyList())
-            } catch (e: Exception) {
-                GymLogaData(sessions = emptyList())
-            }
-            val data = current.copy(exerciseDefinitions = defs)
-            preferences[SESSIONS_KEY] = Json.encodeToString(data)
+            val current = readPrefs(preferences)
+            preferences[SESSIONS_KEY] = Json.encodeToString(current.copy(exerciseDefinitions = defs))
         }
     }
 
     suspend fun renameExerciseDefinition(defId: String, oldName: String, newName: String) {
         context.dataStore.edit { preferences ->
-            val current = try {
-                preferences[SESSIONS_KEY]?.let { parseData(it) } ?: GymLogaData(sessions = emptyList())
-            } catch (e: Exception) {
-                GymLogaData(sessions = emptyList())
-            }
+            val current = readPrefs(preferences)
             val updatedDefs = current.exerciseDefinitions.map {
                 if (it.id == defId) it.copy(name = newName) else it
             }
@@ -116,11 +135,7 @@ class SessionRepository(private val context: Context) {
 
     suspend fun updateExerciseDefinition(defId: String, newName: String, newCategory: String, oldName: String) {
         context.dataStore.edit { preferences ->
-            val current = try {
-                preferences[SESSIONS_KEY]?.let { parseData(it) } ?: GymLogaData(sessions = emptyList())
-            } catch (e: Exception) {
-                GymLogaData(sessions = emptyList())
-            }
+            val current = readPrefs(preferences)
             val nameChanged = newName != oldName
             val updatedDefs = current.exerciseDefinitions.map {
                 if (it.id == defId) it.copy(name = newName, category = newCategory) else it
@@ -135,11 +150,7 @@ class SessionRepository(private val context: Context) {
 
     suspend fun setExerciseDefinitionActive(defId: String, active: Boolean) {
         context.dataStore.edit { preferences ->
-            val current = try {
-                preferences[SESSIONS_KEY]?.let { parseData(it) } ?: GymLogaData(sessions = emptyList())
-            } catch (e: Exception) {
-                GymLogaData(sessions = emptyList())
-            }
+            val current = readPrefs(preferences)
             val updatedDefs = current.exerciseDefinitions.map {
                 if (it.id == defId) it.copy(active = active) else it
             }

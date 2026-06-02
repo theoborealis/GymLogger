@@ -14,7 +14,7 @@
 * You should have received a copy of the GNU Affero General Public License
 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-package com.mbosse.gymloga.data
+package com.theob.gymlogger.data
 
 import kotlinx.serialization.Serializable
 import java.util.UUID

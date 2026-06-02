@@ -1,4 +1,4 @@
-package com.mbosse.gymloga.data
+package com.theob.gymlogger.data
 
 import org.junit.Assert.*
 import org.junit.Test

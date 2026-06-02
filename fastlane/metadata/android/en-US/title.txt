@@ -1,1 +1,1 @@
-GymLoga
+GymLogger

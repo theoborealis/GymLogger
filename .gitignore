@@ -31,3 +31,15 @@ Thumbs.db
 
 # App-specific
 ironlog.jsx
+
+# Nix
+result
+result-*
+.direnv/
+
+# Local tooling
+.claude/
+
+# Build artifacts / logs
+*.apk
+build-*.log

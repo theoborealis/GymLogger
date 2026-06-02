@@ -1,4 +1,4 @@
-package com.mbosse.gymloga.ui
+package com.theob.gymlogger.ui
 
 import android.content.ContentResolver
 import android.net.Uri
@@ -9,13 +9,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mbosse.gymloga.data.*
+import com.theob.gymlogger.data.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.serialization.SerializationException
@@ -30,7 +31,7 @@ sealed class ExportImportEvent {
 
 enum class GymView { LOG, HISTORY, PRS, SESSION_DETAIL, EXERCISE_HISTORY, ADD_EXERCISE, MANAGE_EXERCISES }
 
-class GymLogaViewModel(private val repository: SessionRepository) : ViewModel() {
+class GymLoggerViewModel(private val repository: SessionRepository) : ViewModel() {
     private val _exportImportEvents = MutableSharedFlow<ExportImportEvent>()
     val exportImportEvents: SharedFlow<ExportImportEvent> = _exportImportEvents.asSharedFlow()
 
@@ -47,9 +48,13 @@ class GymLogaViewModel(private val repository: SessionRepository) : ViewModel() 
     )
 
     var currentView by mutableStateOf(GymView.LOG)
+
+    // The session the Log screen is currently bound to. When null, the next edit
+    // creates a fresh session for `aDate`. There is no "save" — every mutation
+    // upserts this session immediately (see persist()).
     var editSessionId by mutableStateOf<String?>(null)
 
-    // Log Form State
+    // Log form state — the live draft for the day being edited.
     var aDate by mutableStateOf(LocalDate.now().toString())
     var aLabel by mutableStateOf("")
     var aNote by mutableStateOf("")
@@ -62,14 +67,112 @@ class GymLogaViewModel(private val repository: SessionRepository) : ViewModel() 
     var showNoteInput by mutableStateOf(false)
     var editDefinitionId by mutableStateOf<String?>(null)
 
-    val isDateValid: Boolean
-        get() = aDate.matches(Regex("""\d{4}-\d{2}-\d{2}""")) &&
-                runCatching { java.time.LocalDate.parse(aDate) }.isSuccess
+    // Whether the "add exercise" bottom sheet is open (driven by the Log FAB).
+    var pickerOpen by mutableStateOf(false)
 
-    // Detail States
+    // Detail / navigation state
     var selectedSession by mutableStateOf<Session?>(null)
     var selectedExerciseName by mutableStateOf<String?>(null)
     var exerciseHistorySource by mutableStateOf(GymView.HISTORY)
+
+    val isEditingToday: Boolean
+        get() = aDate == LocalDate.now().toString()
+
+    init {
+        // On launch, bind the Log screen to today's existing session (if any)
+        // so the user resumes exactly where they left off.
+        viewModelScope.launch {
+            val today = LocalDate.now().toString()
+            val existing = repository.sessionsFlow.first().find { it.date == today }
+            if (existing != null && editSessionId == null &&
+                aExercises.isEmpty() && aLabel.isBlank() && aNote.isBlank()
+            ) {
+                bindSession(existing)
+            }
+        }
+    }
+
+    // ── Auto-save ────────────────────────────────────────────────────────────
+
+    /**
+     * Write the current draft straight into storage. Called after every edit.
+     * If the day has no content left, any session we created for it is removed.
+     */
+    private fun persist() {
+        val exercises = aExercises.toList()
+        val hasContent = exercises.isNotEmpty() || aLabel.isNotBlank() || aNote.isNotBlank()
+        val currentId = editSessionId
+
+        if (!hasContent) {
+            if (currentId != null) {
+                editSessionId = null
+                viewModelScope.launch { repository.deleteSession(currentId) }
+            }
+            return
+        }
+
+        val id = currentId ?: java.util.UUID.randomUUID().toString().also { editSessionId = it }
+        val session = Session(
+            id = id,
+            date = aDate,
+            label = aLabel.trim(),
+            note = aNote.trim(),
+            exercises = exercises
+        )
+        viewModelScope.launch { repository.upsertSession(session) }
+    }
+
+    private fun bindSession(session: Session) {
+        aDate = session.date
+        aLabel = session.label
+        aNote = session.note
+        aExercises.clear()
+        aExercises.addAll(session.exercises)
+        editSessionId = session.id
+        resetCurrent()
+    }
+
+    private fun resetCurrent() {
+        curName = ""
+        curDefinitionId = null
+        curSet = ""
+        curExNote = ""
+        showNoteInput = false
+    }
+
+    /** Switch the Log editor to a given day, loading its session or starting fresh. */
+    fun loadDay(date: String) {
+        val existing = sessions.value.find { it.date == date }
+        if (existing != null) {
+            bindSession(existing)
+        } else {
+            aDate = date
+            aLabel = ""
+            aNote = ""
+            aExercises.clear()
+            editSessionId = null
+            resetCurrent()
+        }
+    }
+
+    /** Bottom-nav "Today": jump back to today unless already editing it. */
+    fun goToToday() {
+        val today = LocalDate.now().toString()
+        if (aDate != today) loadDay(today)
+        currentView = GymView.LOG
+    }
+
+    fun updateLabel(value: String) {
+        aLabel = value
+        persist()
+    }
+
+    fun updateNote(value: String) {
+        aNote = value
+        persist()
+    }
+
+    // ── Exercise editing ───────────────────────────────────────────────────────
 
     fun addSet() {
         if (curName.isBlank() || curSet.isBlank()) return
@@ -84,6 +187,7 @@ class GymLogaViewModel(private val repository: SessionRepository) : ViewModel() 
             aExercises.add(Exercise(name = curName.trim(), sets = sets, definitionId = curDefinitionId))
         }
         curSet = ""
+        persist()
     }
 
     fun selectExercise(name: String, definitionId: String? = null) {
@@ -95,31 +199,14 @@ class GymLogaViewModel(private val repository: SessionRepository) : ViewModel() 
         showNoteInput = false
         if (aExercises.none { it.name.lowercase() == trimmed.lowercase() }) {
             aExercises.add(Exercise(name = trimmed, sets = emptyList(), definitionId = definitionId))
+            persist()
         }
     }
 
     fun clearCurrentExercise() {
-        aExercises.removeAll { it.name.lowercase() == curName.lowercase() && it.sets.isEmpty() }
-        curName = ""
-        curDefinitionId = null
-        curSet = ""
-        curExNote = ""
-        showNoteInput = false
-    }
-
-    fun renameExercise(defId: String, oldName: String, newName: String) {
-        viewModelScope.launch { repository.renameExerciseDefinition(defId, oldName, newName) }
-    }
-
-    fun setExerciseActive(defId: String, active: Boolean) {
-        viewModelScope.launch { repository.setExerciseDefinitionActive(defId, active) }
-    }
-
-    fun updateExerciseDefinition(defId: String, newName: String, newCategory: String) {
-        val existing = exerciseDefinitions.value.find { it.id == defId } ?: return
-        viewModelScope.launch {
-            repository.updateExerciseDefinition(defId, newName.trim(), newCategory.trim(), existing.name)
-        }
+        val removed = aExercises.removeAll { it.name.lowercase() == curName.lowercase() && it.sets.isEmpty() }
+        resetCurrent()
+        if (removed) persist()
     }
 
     fun addExNote() {
@@ -129,6 +216,7 @@ class GymLogaViewModel(private val repository: SessionRepository) : ViewModel() 
             val oldNote = aExercises[existingIndex].note
             val newNote = if (oldNote.isEmpty()) curExNote.trim() else "$oldNote\n${curExNote.trim()}"
             aExercises[existingIndex] = aExercises[existingIndex].copy(note = newNote)
+            persist()
         }
         curExNote = ""
         showNoteInput = false
@@ -143,11 +231,26 @@ class GymLogaViewModel(private val repository: SessionRepository) : ViewModel() 
             } else {
                 aExercises.removeAt(index)
             }
+            persist()
         }
     }
 
     fun deleteExercise(exerciseId: String) {
-        aExercises.removeAll { it.id == exerciseId }
+        val removed = aExercises.removeAll { it.id == exerciseId }
+        if (removed) persist()
+    }
+
+    // ── Exercise definitions ─────────────────────────────────────────────────
+
+    fun setExerciseActive(defId: String, active: Boolean) {
+        viewModelScope.launch { repository.setExerciseDefinitionActive(defId, active) }
+    }
+
+    fun updateExerciseDefinition(defId: String, newName: String, newCategory: String) {
+        val existing = exerciseDefinitions.value.find { it.id == defId } ?: return
+        viewModelScope.launch {
+            repository.updateExerciseDefinition(defId, newName.trim(), newCategory.trim(), existing.name)
+        }
     }
 
     fun addExerciseDefinition(name: String, category: String) {
@@ -163,59 +266,29 @@ class GymLogaViewModel(private val repository: SessionRepository) : ViewModel() 
         }
     }
 
-    fun saveSession() {
-        val validExercises = aExercises.filter { it.sets.isNotEmpty() }
-        if (validExercises.isEmpty()) return
-        val session = Session(
-            id = editSessionId ?: java.util.UUID.randomUUID().toString(),
-            date = aDate,
-            label = aLabel.trim(),
-            note = aNote.trim(),
-            exercises = validExercises
-        )
+    // ── Sessions ─────────────────────────────────────────────────────────────
 
-        val updatedSessions = if (editSessionId != null) {
-            sessions.value.map { if (it.id == editSessionId) session else it }
-        } else {
-            listOf(session) + sessions.value
-        }
-
-        viewModelScope.launch {
-            repository.saveSessions(updatedSessions)
-            clearLog()
-            currentView = GymView.HISTORY
-        }
-    }
-
-    fun clearLog() {
-        aDate = LocalDate.now().toString()
-        aLabel = ""
-        aNote = ""
-        aExercises.clear()
-        curName = ""
-        curDefinitionId = null
-        curSet = ""
-        curExNote = ""
-        editSessionId = null
-        showNoteInput = false
-    }
-
+    /** Open a past (or any) session in the Log editor; edits continue to auto-save. */
     fun editSession(session: Session) {
-        aDate = session.date
-        aLabel = session.label
-        aNote = session.note
-        aExercises.clear()
-        aExercises.addAll(session.exercises)
-        editSessionId = session.id
+        bindSession(session)
         currentView = GymView.LOG
     }
 
     fun deleteSession(sessionId: String) {
-        viewModelScope.launch {
-            repository.saveSessions(sessions.value.filter { it.id != sessionId })
-            currentView = GymView.HISTORY
+        viewModelScope.launch { repository.deleteSession(sessionId) }
+        if (editSessionId == sessionId) {
+            // We just deleted the day the editor was bound to — reset to a blank today.
+            aDate = LocalDate.now().toString()
+            aLabel = ""
+            aNote = ""
+            aExercises.clear()
+            editSessionId = null
+            resetCurrent()
         }
+        currentView = GymView.HISTORY
     }
+
+    // ── Export / Import ──────────────────────────────────────────────────────
 
     fun exportToUri(uri: Uri, contentResolver: ContentResolver) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -223,7 +296,7 @@ class GymLogaViewModel(private val repository: SessionRepository) : ViewModel() 
                 contentResolver.openOutputStream(uri)?.use { repository.exportToStream(it) }
                 _exportImportEvents.emit(ExportImportEvent.ExportSuccess)
             } catch (e: Exception) {
-                Log.e("GymLogaViewModel", "Export failed", e)
+                Log.e("GymLoggerViewModel", "Export failed", e)
                 _exportImportEvents.emit(ExportImportEvent.ExportFailure(e.message ?: "Unknown error"))
             }
         }
@@ -242,10 +315,10 @@ class GymLogaViewModel(private val repository: SessionRepository) : ViewModel() 
                 repository.saveSessions(sessions.value + newSessions)
                 _exportImportEvents.emit(ExportImportEvent.ImportSuccess(newSessions.size))
             } catch (e: SerializationException) {
-                Log.e("GymLogaViewModel", "Import failed", e)
+                Log.e("GymLoggerViewModel", "Import failed", e)
                 _exportImportEvents.emit(ExportImportEvent.ImportFailure("Invalid file format"))
             } catch (e: Exception) {
-                Log.e("GymLogaViewModel", "Import failed", e)
+                Log.e("GymLoggerViewModel", "Import failed", e)
                 _exportImportEvents.emit(ExportImportEvent.ImportFailure(e.message ?: "Unknown error"))
             }
         }
