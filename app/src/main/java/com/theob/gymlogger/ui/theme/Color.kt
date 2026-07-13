@@ -20,46 +20,69 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.ui.graphics.Color
 
-/**
- * Fallback Material You palette used below Android 12, where wallpaper-based
- * dynamic color is unavailable. A warm "training amber" seed, nodding to the
- * original GymLoga accent while staying within Material 3 tonal conventions.
+/*
+ * The original GymLoga accent palette, restored. The Material You redesign had
+ * swapped these for wallpaper-derived dynamic color (and a warm amber fallback);
+ * here we go back to the hand-picked brand accents so the app looks the same on
+ * every device, regardless of wallpaper.
+ *
+ *   Gold  — the dominant accent (titles, active borders, primary buttons, FAB,
+ *           set weights, dates, chart line)            -> primary
+ *   Green — personal records / positive / chart points -> tertiary
+ *   Red   — clear / delete / destructive               -> error
+ *   Blue  — kept from the original palette for completeness
  */
-val FallbackDarkScheme: ColorScheme = darkColorScheme(
-    primary = Color(0xFFFFB870),
-    onPrimary = Color(0xFF482900),
-    primaryContainer = Color(0xFF673D00),
-    onPrimaryContainer = Color(0xFFFFDCBE),
-    secondary = Color(0xFFE1C1A4),
-    onSecondary = Color(0xFF402C18),
-    secondaryContainer = Color(0xFF59422C),
-    onSecondaryContainer = Color(0xFFFEDDBE),
-    tertiary = Color(0xFFB5CEA0),
-    onTertiary = Color(0xFF223515),
-    tertiaryContainer = Color(0xFF384B29),
-    onTertiaryContainer = Color(0xFFD1EBBB),
-    error = Color(0xFFFFB4AB),
-    onError = Color(0xFF690005),
-    errorContainer = Color(0xFF93000A),
-    onErrorContainer = Color(0xFFFFDAD6),
-    background = Color(0xFF18120B),
-    onBackground = Color(0xFFEDE0D4),
-    surface = Color(0xFF18120B),
-    onSurface = Color(0xFFEDE0D4),
-    surfaceVariant = Color(0xFF504539),
-    onSurfaceVariant = Color(0xFFD4C4B5),
-    outline = Color(0xFF9C8E80),
-    outlineVariant = Color(0xFF4F4539),
-    inverseSurface = Color(0xFFEDE0D4),
-    inverseOnSurface = Color(0xFF362F27),
-    inversePrimary = Color(0xFF885200),
+private val BrandGold  = Color(0xFFC9983A)
+private val BrandGreen = Color(0xFF4D8F5F)
+private val BrandRed   = Color(0xFFB8483A)
+@Suppress("unused")
+private val BrandBlue  = Color(0xFF5080AA)
+
+/**
+ * Fixed dark scheme seeded from the original GymLoga accents. Neutral surfaces
+ * here are placeholders — [toAmoled] remaps the whole surface ladder to true
+ * black before the scheme reaches MaterialTheme.
+ */
+val BrandDarkScheme: ColorScheme = darkColorScheme(
+    primary = BrandGold,
+    onPrimary = Color(0xFF2A1C00),
+    primaryContainer = Color(0xFF534009),
+    onPrimaryContainer = Color(0xFFF4DBA6),
+    inversePrimary = Color(0xFF7A5A12),
+
+    // Muted-gold sibling so tonal buttons stay on-brand rather than drifting blue.
+    secondary = Color(0xFFD8BE93),
+    onSecondary = Color(0xFF3A2E12),
+    secondaryContainer = Color(0xFF4A3D26),
+    onSecondaryContainer = Color(0xFFEFD9BC),
+
+    tertiary = BrandGreen,
+    onTertiary = Color(0xFF06250F),
+    tertiaryContainer = Color(0xFF20402A),
+    onTertiaryContainer = Color(0xFFA9DDB8),
+
+    error = BrandRed,
+    onError = Color(0xFFFFFFFF),
+    errorContainer = Color(0xFF5C1A12),
+    onErrorContainer = Color(0xFFFFDAD3),
+
+    background = Color(0xFF14110C),
+    onBackground = Color(0xFFE7E1D8),
+    surface = Color(0xFF14110C),
+    onSurface = Color(0xFFE7E1D8),
+    surfaceVariant = Color(0xFF494136),
+    onSurfaceVariant = Color(0xFFADA398),
+    outline = Color(0xFF8C8478),
+    outlineVariant = Color(0xFF3B362E),
+    inverseSurface = Color(0xFFE7E1D8),
+    inverseOnSurface = Color(0xFF332F28),
 )
 
 /**
  * Remap the neutral surface ladder to near-black so OLED pixels actually switch
- * off, while preserving the (dynamic or fallback) accent roles. This is what
- * makes the theme genuinely AMOLED rather than "dark grey everywhere": cards and
- * sheets still read as distinct elevations, just against true black.
+ * off, while preserving the accent roles. This is what makes the theme genuinely
+ * AMOLED rather than "dark grey everywhere": cards and sheets still read as
+ * distinct elevations, just against true black.
  */
 fun ColorScheme.toAmoled(): ColorScheme = copy(
     background = Color.Black,

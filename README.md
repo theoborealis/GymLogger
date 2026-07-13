@@ -30,7 +30,7 @@ nix-shell --run './gradlew :app:testDebugUnitTest'
 
 The debug APK is generated at `app/build/outputs/apk/debug/app-debug.apk`.
 
-If you already have a local Android SDK (`ANDROID_HOME` set, build-tools 34, platform 34), the standard `./gradlew assembleDebug` works too.
+If you already have a local Android SDK (`ANDROID_HOME` set, build-tools 36.0.0, platform 36), the standard `./gradlew assembleDebug` works too.
 
 ## Testing / profiling
 

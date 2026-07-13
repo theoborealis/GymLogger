@@ -16,31 +16,22 @@
 */
 package com.theob.gymlogger.ui.theme
 
-import android.os.Build
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
+
+/** True-black AMOLED surfaces carrying the restored original GymLoga accents. */
+private val AmoledBrandScheme = BrandDarkScheme.toAmoled()
 
 /**
- * GymLogger is hardcoded to a single look: a true-black AMOLED dark theme with
- * Material You dynamic color on Android 12+ and a warm fallback palette below
- * that. There is intentionally no light theme and no theme picker.
+ * GymLogger is hardcoded to a single look: a true-black AMOLED dark theme built
+ * around the original hand-picked accent palette. Wallpaper-based dynamic color
+ * is intentionally not used, so the brand accents (gold / green / red) look the
+ * same on every device. There is no light theme and no theme picker.
  */
 @Composable
 fun GymLoggerTheme(content: @Composable () -> Unit) {
-    val context = LocalContext.current
-    val colorScheme = remember(context) {
-        val base = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            dynamicDarkColorScheme(context)
-        } else {
-            FallbackDarkScheme
-        }
-        base.toAmoled()
-    }
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = AmoledBrandScheme,
         typography = GymTypography,
         shapes = GymShapes,
         content = content,

@@ -46,3 +46,6 @@ build-*.log
 
 # Emulator working dir (AVD, snapshots, screenshots)
 .emulator/
+
+# JVM heap dumps (e.g. from D8 OOM)
+*.hprof
