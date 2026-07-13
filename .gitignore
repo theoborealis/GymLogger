@@ -43,3 +43,6 @@ result-*
 # Build artifacts / logs
 *.apk
 build-*.log
+
+# Emulator working dir (AVD, snapshots, screenshots)
+.emulator/

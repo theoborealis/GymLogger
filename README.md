@@ -32,6 +32,33 @@ The debug APK is generated at `app/build/outputs/apk/debug/app-debug.apk`.
 
 If you already have a local Android SDK (`ANDROID_HOME` set, build-tools 34, platform 34), the standard `./gradlew assembleDebug` works too.
 
+## Testing / profiling
+
+`emulator.nix` provisions a headless Android emulator (JDK 17 + SDK 34 + an
+x86_64 system image) so the app can be driven and profiled without a physical
+device. `scripts/emulator.sh` wraps the lifecycle:
+
+```bash
+# boot a KVM-accelerated emulator in the background, then wait for it
+nix-shell emulator.nix --run './scripts/emulator.sh boot' &
+nix-shell emulator.nix --run './scripts/emulator.sh wait'
+
+# install, launch, screenshot
+nix-shell emulator.nix --run './scripts/emulator.sh install'
+nix-shell emulator.nix --run './scripts/emulator.sh launch'
+nix-shell emulator.nix --run './scripts/emulator.sh shot today'   # -> .emulator/shots/today.png
+
+nix-shell emulator.nix --run './scripts/emulator.sh down'         # stop it
+```
+
+`scripts/jank-test.sh` drives a fixed typing workload and prints the `gfxinfo`
+summary. Note the bundled emulator renders with SwiftShader (software GL), so
+frame-level jank numbers are dominated by the renderer and are *not*
+representative of real hardware. To measure the auto-save cost specifically, the
+most reliable signal is render-independent — e.g. counting DataStore writes with
+`inotifyd files/datastore` during a typing burst (debounced saves collapse a
+burst of keystrokes into a single write).
+
 ## License
 
 This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0) or later**. See the AGPL-3.0-or-later file for details. As a fork, it preserves the original copyright and license of GymLoga.
