@@ -59,6 +59,18 @@ most reliable signal is render-independent — e.g. counting DataStore writes wi
 `inotifyd files/datastore` during a typing burst (debounced saves collapse a
 burst of keystrokes into a single write).
 
+## Install / self-hosted F-Droid repo
+
+Signed builds are published to a **custom F-Droid repository hosted entirely on
+GitHub** (Actions + Pages). Add this to your F-Droid client for automatic updates:
+
+```
+https://theoborealis.github.io/GymLogger/fdroid/repo
+```
+
+Tagging `v*` builds a signed APK, regenerates the repo, and cuts a GitHub Release.
+Setup and release steps are in [docs/FDROID.md](docs/FDROID.md).
+
 ## License
 
 This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0) or later**. See the AGPL-3.0-or-later file for details. As a fork, it preserves the original copyright and license of GymLoga.

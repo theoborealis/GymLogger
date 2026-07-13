@@ -23,10 +23,29 @@ android {
         }
     }
 
+    // Release signing is driven entirely by environment variables so that:
+    //   * local `assembleRelease` still works (produces an unsigned APK) with no key present, and
+    //   * CI can sign by exporting SIGNING_KEYSTORE_FILE + the three passwords/alias.
+    // See .github/workflows/release.yml and docs/FDROID.md.
+    val releaseStoreFile: String? = System.getenv("SIGNING_KEYSTORE_FILE")
+    signingConfigs {
+        if (releaseStoreFile != null) {
+            create("release") {
+                storeFile = file(releaseStoreFile)
+                storePassword = System.getenv("SIGNING_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("SIGNING_KEY_ALIAS")
+                keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (releaseStoreFile != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
     compileOptions {

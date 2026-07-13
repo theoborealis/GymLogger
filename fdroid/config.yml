@@ -1,0 +1,26 @@
+# fdroidserver repo configuration.
+# `fdroid update` (run from the staged copy of this dir in CI) reads this to build
+# and sign the repo index. Passwords come from the environment so nothing secret
+# lives in git. See docs/FDROID.md.
+
+repo_url: https://theoborealis.github.io/GymLogger/fdroid/repo
+repo_name: GymLogger
+repo_description: >-
+  Personal F-Droid repository for GymLogger, a minimal offline Compose workout logger.
+repo_icon: icon.png
+
+# Keep every published version (0 = never move old APKs into an archive repo).
+archive_older: 0
+
+# The same PKCS12 keystore is used to sign the release APK and this repo index.
+# It is written next to this file by the workflow and deleted before publishing.
+keystore: keystore.p12
+repo_keyalias: gymlogger
+keystorepass:
+  env: KEYSTORE_PASSWORD
+keypass:
+  env: KEY_PASSWORD
+
+# apksigner / build-tools are located from the ANDROID_HOME environment variable
+# (set by android-actions/setup-android in CI); fdroid uses it automatically, so
+# sdk_path is intentionally not set here (it does not accept an {env:} reference).
