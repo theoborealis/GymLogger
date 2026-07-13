@@ -33,9 +33,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.unit.dp
 import com.theob.gymlogger.data.Exercise
 import com.theob.gymlogger.data.ExerciseDefinition
@@ -198,6 +202,23 @@ private fun ExerciseCard(
     onCurExNoteChange: (String) -> Unit,
     onAddNote: () -> Unit
 ) {
+    // Reps/sets are almost always numeric, so default the set field to a numeric
+    // keypad. KeyboardType.Phone is used (not Number) because its dial-pad has the
+    // '*' separator and '.' the 135*5 / 62.5*5 shorthand needs. Users can switch to
+    // a full QWERTY keyboard (for freeform notes like "30s") via the ABC/123 toggle.
+    var numericKeyboard by rememberSaveable { mutableStateOf(true) }
+    val setFieldFocus = remember { FocusRequester() }
+    var refocusSetField by remember { mutableStateOf(false) }
+    // Changing keyboardType on a focused field doesn't swap the on-screen keyboard,
+    // so the field is wrapped in key(numericKeyboard) to recreate it on toggle; this
+    // refocuses the new field so the keyboard reopens with the chosen type.
+    LaunchedEffect(numericKeyboard) {
+        if (refocusSetField) {
+            refocusSetField = false
+            setFieldFocus.requestFocus()
+        }
+    }
+
     Card(
         onClick = onActivate,
         modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
@@ -246,16 +267,37 @@ private fun ExerciseCard(
                 Spacer(Modifier.height(12.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = curSet,
-                        onValueChange = onCurSetChange,
-                        placeholder = { Text("135*5 or 20*10*2") },
-                        singleLine = true,
-                        shape = MaterialTheme.shapes.medium,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = { onAddSet() }),
-                        modifier = Modifier.weight(1f)
-                    )
+                    key(numericKeyboard) {
+                        OutlinedTextField(
+                            value = curSet,
+                            onValueChange = onCurSetChange,
+                            placeholder = { Text("135*5 or 20*10*2") },
+                            singleLine = true,
+                            shape = MaterialTheme.shapes.medium,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = if (numericKeyboard) KeyboardType.Phone else KeyboardType.Text,
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(onDone = { onAddSet() }),
+                            trailingIcon = {
+                                // Label shows what a tap switches TO (ABC = full keyboard).
+                                Text(
+                                    if (numericKeyboard) "ABC" else "123",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier
+                                        .clickable {
+                                            refocusSetField = true
+                                            numericKeyboard = !numericKeyboard
+                                        }
+                                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                                )
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .focusRequester(setFieldFocus)
+                        )
+                    }
                     FilledTonalButton(
                         onClick = onAddSet,
                         enabled = curSet.isNotBlank(),
