@@ -65,8 +65,8 @@ object DataLogic {
         val t = raw.trim()
         if (t.isEmpty()) return emptyList()
 
-        // Regex: 135x5x3
-        val wxrxs = Regex("""^(\d+(?:\.\d+)?)\s*x\s*(\d+)\s*x\s*(\d+)$""", RegexOption.IGNORE_CASE).find(t)
+        // Regex: 135*5*2  (weight * reps * sets; legacy 'x' still accepted)
+        val wxrxs = Regex("""^(\d+(?:\.\d+)?)\s*[xX*]\s*(\d+)\s*[xX*]\s*(\d+)$""", RegexOption.IGNORE_CASE).find(t)
         if (wxrxs != null) {
             val w = wxrxs.groupValues[1].toDoubleOrNull() ?: 0.0
             val r = wxrxs.groupValues[2].toIntOrNull() ?: 0
@@ -74,8 +74,8 @@ object DataLogic {
             return List(s) { WorkoutSet(w = w, r = r) }
         }
 
-        // Regex: 135x5
-        val wxr = Regex("""^(\d+(?:\.\d+)?)\s*x\s*(\d+)$""", RegexOption.IGNORE_CASE).find(t)
+        // Regex: 135*5  (weight * reps; legacy 'x' still accepted)
+        val wxr = Regex("""^(\d+(?:\.\d+)?)\s*[xX*]\s*(\d+)$""", RegexOption.IGNORE_CASE).find(t)
         if (wxr != null) {
             val w = wxr.groupValues[1].toDoubleOrNull() ?: 0.0
             val r = wxr.groupValues[2].toIntOrNull() ?: 0
@@ -90,7 +90,7 @@ object DataLogic {
         }
 
         // Freeform with weight/reps
-        val freeWxR = Regex("""(\d+(?:\.\d+)?)\s*x\s*(\d+)""", RegexOption.IGNORE_CASE).find(t)
+        val freeWxR = Regex("""(\d+(?:\.\d+)?)\s*[xX*]\s*(\d+)""", RegexOption.IGNORE_CASE).find(t)
         if (freeWxR != null) {
             val w = freeWxR.groupValues[1].toDoubleOrNull() ?: 0.0
             val r = freeWxR.groupValues[2].toIntOrNull() ?: 0

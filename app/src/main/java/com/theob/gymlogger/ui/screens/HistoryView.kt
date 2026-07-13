@@ -40,7 +40,8 @@ import com.theob.gymlogger.ui.components.formatDate
 import com.theob.gymlogger.ui.components.formatVolume
 
 @Composable
-fun HistoryView(viewModel: GymLoggerViewModel, sessions: List<Session>, snackbarHostState: SnackbarHostState) {
+fun HistoryView(viewModel: GymLoggerViewModel, snackbarHostState: SnackbarHostState) {
+    val sessions by viewModel.sessions.collectAsState()
     val context = LocalContext.current
     val allNames = remember(sessions) { DataLogic.getAllExerciseNames(sessions) }
     val sortedSessions = remember(sessions) { sessions.sortedByDescending { it.date } }

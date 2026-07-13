@@ -27,7 +27,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -77,13 +76,6 @@ fun LogView(viewModel: GymLoggerViewModel) {
                 leadingIcon = { Icon(Icons.Filled.DateRange, contentDescription = null, modifier = Modifier.size(18.dp)) }
             )
             Spacer(Modifier.weight(1f))
-            Icon(
-                Icons.Filled.Done,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(Modifier.width(4.dp))
             Text("Auto-saved", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
@@ -257,7 +249,7 @@ private fun ExerciseCard(
                     OutlinedTextField(
                         value = curSet,
                         onValueChange = onCurSetChange,
-                        placeholder = { Text("135x5 or 20x10x2") },
+                        placeholder = { Text("135*5 or 20*10*2") },
                         singleLine = true,
                         shape = MaterialTheme.shapes.medium,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
@@ -273,7 +265,7 @@ private fun ExerciseCard(
                     }
                 }
                 Text(
-                    "135x5 = one set · 20x10x2 = two sets · 30s = freeform",
+                    "135*5 = one set · 20*10*2 = two sets · 30s = freeform",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 6.dp, start = 4.dp)

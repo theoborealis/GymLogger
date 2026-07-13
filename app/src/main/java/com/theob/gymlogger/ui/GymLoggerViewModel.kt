@@ -11,6 +11,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.theob.gymlogger.data.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -122,6 +124,27 @@ class GymLoggerViewModel(private val repository: SessionRepository) : ViewModel(
         viewModelScope.launch { repository.upsertSession(session) }
     }
 
+    private var persistJob: Job? = null
+
+    /** Persist now, cancelling any pending debounced write. Used for discrete taps. */
+    private fun persistNow() {
+        persistJob?.cancel()
+        persistJob = null
+        persist()
+    }
+
+    /**
+     * Coalesce rapid text edits (label / notes) into a single write ~300ms after
+     * typing stops, instead of serializing the whole dataset on every keystroke.
+     */
+    private fun debouncedPersist() {
+        persistJob?.cancel()
+        persistJob = viewModelScope.launch {
+            delay(300)
+            persist()
+        }
+    }
+
     private fun bindSession(session: Session) {
         aDate = session.date
         aLabel = session.label
@@ -142,6 +165,7 @@ class GymLoggerViewModel(private val repository: SessionRepository) : ViewModel(
 
     /** Switch the Log editor to a given day, loading its session or starting fresh. */
     fun loadDay(date: String) {
+        persistNow() // flush the current draft before switching days
         val existing = sessions.value.find { it.date == date }
         if (existing != null) {
             bindSession(existing)
@@ -164,12 +188,12 @@ class GymLoggerViewModel(private val repository: SessionRepository) : ViewModel(
 
     fun updateLabel(value: String) {
         aLabel = value
-        persist()
+        debouncedPersist()
     }
 
     fun updateNote(value: String) {
         aNote = value
-        persist()
+        debouncedPersist()
     }
 
     // ── Exercise editing ───────────────────────────────────────────────────────
@@ -187,7 +211,7 @@ class GymLoggerViewModel(private val repository: SessionRepository) : ViewModel(
             aExercises.add(Exercise(name = curName.trim(), sets = sets, definitionId = curDefinitionId))
         }
         curSet = ""
-        persist()
+        persistNow()
     }
 
     fun selectExercise(name: String, definitionId: String? = null) {
@@ -199,14 +223,14 @@ class GymLoggerViewModel(private val repository: SessionRepository) : ViewModel(
         showNoteInput = false
         if (aExercises.none { it.name.lowercase() == trimmed.lowercase() }) {
             aExercises.add(Exercise(name = trimmed, sets = emptyList(), definitionId = definitionId))
-            persist()
+            persistNow()
         }
     }
 
     fun clearCurrentExercise() {
         val removed = aExercises.removeAll { it.name.lowercase() == curName.lowercase() && it.sets.isEmpty() }
         resetCurrent()
-        if (removed) persist()
+        if (removed) persistNow()
     }
 
     fun addExNote() {
@@ -216,7 +240,7 @@ class GymLoggerViewModel(private val repository: SessionRepository) : ViewModel(
             val oldNote = aExercises[existingIndex].note
             val newNote = if (oldNote.isEmpty()) curExNote.trim() else "$oldNote\n${curExNote.trim()}"
             aExercises[existingIndex] = aExercises[existingIndex].copy(note = newNote)
-            persist()
+            persistNow()
         }
         curExNote = ""
         showNoteInput = false
@@ -231,13 +255,13 @@ class GymLoggerViewModel(private val repository: SessionRepository) : ViewModel(
             } else {
                 aExercises.removeAt(index)
             }
-            persist()
+            persistNow()
         }
     }
 
     fun deleteExercise(exerciseId: String) {
         val removed = aExercises.removeAll { it.id == exerciseId }
-        if (removed) persist()
+        if (removed) persistNow()
     }
 
     // ── Exercise definitions ─────────────────────────────────────────────────
@@ -270,11 +294,13 @@ class GymLoggerViewModel(private val repository: SessionRepository) : ViewModel(
 
     /** Open a past (or any) session in the Log editor; edits continue to auto-save. */
     fun editSession(session: Session) {
+        persistNow() // flush the current draft before binding another session
         bindSession(session)
         currentView = GymView.LOG
     }
 
     fun deleteSession(sessionId: String) {
+        persistJob?.cancel() // drop any pending write so it can't resurrect the session
         viewModelScope.launch { repository.deleteSession(sessionId) }
         if (editSessionId == sessionId) {
             // We just deleted the day the editor was bound to — reset to a blank today.

@@ -7,7 +7,7 @@ It's a fork of [GymLoga](https://github.com/GymLoga/GymLoga-Android) by Michael 
 ## Features
 
 - **Auto-saving log**: Everything you add to a day is written instantly. Add an exercise, a set, or a note and it's already saved — no "Save" button, no lost sessions.
-- **Blazing fast entry**: Log your sets with simple shorthand like `135x5x3` or `20x10`.
+- **Blazing fast entry**: Log your sets with simple shorthand like `135*5*2` or `20*10` (weight * reps * sets).
 - **Automatic PR tracking**: The app identifies your Personal Records (PRs) as you log.
 - **Strength analytics**: View your exercise history and estimated One Rep Max (1RM) progress.
 - **Material You**: Dynamic color on Android 12+ with a tasteful fallback palette, on a pure-black AMOLED surface.

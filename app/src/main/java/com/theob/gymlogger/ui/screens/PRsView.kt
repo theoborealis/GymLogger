@@ -21,6 +21,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -34,7 +36,8 @@ import com.theob.gymlogger.ui.components.formatWeight
 import kotlin.math.roundToLong
 
 @Composable
-fun PRsView(viewModel: GymLoggerViewModel, sessions: List<Session>) {
+fun PRsView(viewModel: GymLoggerViewModel) {
+    val sessions by viewModel.sessions.collectAsState()
     val prs = DataLogic.getAllPRs(sessions)
 
     LazyColumn(modifier = Modifier.fillMaxSize()) {

@@ -20,6 +20,7 @@ import android.os.Build
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 
 /**
@@ -30,13 +31,16 @@ import androidx.compose.ui.platform.LocalContext
 @Composable
 fun GymLoggerTheme(content: @Composable () -> Unit) {
     val context = LocalContext.current
-    val base = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        dynamicDarkColorScheme(context)
-    } else {
-        FallbackDarkScheme
+    val colorScheme = remember(context) {
+        val base = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            dynamicDarkColorScheme(context)
+        } else {
+            FallbackDarkScheme
+        }
+        base.toAmoled()
     }
     MaterialTheme(
-        colorScheme = base.toAmoled(),
+        colorScheme = colorScheme,
         typography = GymTypography,
         shapes = GymShapes,
         content = content,

@@ -22,8 +22,10 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
@@ -75,7 +77,7 @@ class SessionRepository(private val context: Context) {
             android.util.Log.e("SessionRepository", "Failed to deserialize data", e)
             GymLogaData(sessions = emptyList())
         }
-    }
+    }.flowOn(Dispatchers.Default) // keep JSON parsing off the main thread
 
     val sessionsFlow: Flow<List<Session>> = dataFlow.map { it.sessions }
 

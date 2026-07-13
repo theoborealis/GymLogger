@@ -27,6 +27,25 @@ class DataLogicTest {
     }
 
     @Test
+    fun parseSets_starSeparator_weightRepsSets() {
+        val sets = DataLogic.parseSets("25*5*2")
+        assertEquals(2, sets.size)
+        sets.forEach {
+            assertEquals(25.0, it.w)
+            assertEquals(5, it.r)
+        }
+    }
+
+    @Test
+    fun parseSets_starSeparator_weightReps() {
+        val sets = DataLogic.parseSets("25*5")
+        assertEquals(1, sets.size)
+        assertEquals(25.0, sets[0].w)
+        assertEquals(5, sets[0].r)
+        assertNull(sets[0].note)
+    }
+
+    @Test
     fun parseSets_bareWeight_countsAsOneRep() {
         val sets = DataLogic.parseSets("135")
         assertEquals(1, sets.size)

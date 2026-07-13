@@ -40,8 +40,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -53,7 +51,6 @@ import com.theob.gymlogger.ui.theme.GymLoggerTheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GymLoggerApp(viewModel: GymLoggerViewModel) {
-    val sessions by viewModel.sessions.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
     GymLoggerTheme {
@@ -147,10 +144,10 @@ fun GymLoggerApp(viewModel: GymLoggerViewModel) {
             ) {
                 when (view) {
                     GymView.LOG -> LogView(viewModel)
-                    GymView.HISTORY -> HistoryView(viewModel, sessions, snackbarHostState)
-                    GymView.PRS -> PRsView(viewModel, sessions)
+                    GymView.HISTORY -> HistoryView(viewModel, snackbarHostState)
+                    GymView.PRS -> PRsView(viewModel)
                     GymView.SESSION_DETAIL -> SessionDetailView(viewModel)
-                    GymView.EXERCISE_HISTORY -> ExerciseHistoryView(viewModel, sessions)
+                    GymView.EXERCISE_HISTORY -> ExerciseHistoryView(viewModel)
                     GymView.ADD_EXERCISE -> AddExerciseView(viewModel)
                     GymView.MANAGE_EXERCISES -> ManageExercisesView(viewModel)
                 }
