@@ -1,0 +1,13 @@
+GymLogger is a minimalist, native Android application for logging your strength training sessions. It is a Material You redesign of GymLoga with a true-black AMOLED theme and an auto-saving log.
+
+Features:
+- Auto-saving log: every exercise, set and note is written the moment you add it — no save button
+- Fast logging with shorthand input (e.g., 135*5*2)
+- Automatic Personal Record (PR) tracking
+- Estimated 1RM calculations
+- Exercise history and progress tracking
+- Material You dynamic color on a pure-black AMOLED surface
+- 100% private: all data stays on your device
+- Open source and free from tracking or ads
+
+Inspired by the simplicity of a paper log but enhanced with the power of native Android.

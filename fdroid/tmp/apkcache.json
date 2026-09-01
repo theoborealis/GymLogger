@@ -1,0 +1,68 @@
+{
+  "METADATA_VERSION": 20002,
+  "allow_disabled_algorithms": false,
+  "gymlogger-v1.2.apk": {
+    "hash": "f34a8dff292110c12e752d1ede5d759d48ace9523a47150323808a08fad4b278",
+    "hashType": "sha256",
+    "uses-permission": [
+      [
+        "com.theob.gymlogger.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
+        null
+      ]
+    ],
+    "uses-permission-sdk-23": [],
+    "features": [],
+    "icons_src": {},
+    "icons": {},
+    "antiFeatures": {},
+    "packageName": "com.theob.gymlogger",
+    "versionCode": 2,
+    "name": "GymLogger",
+    "versionName": "1.2",
+    "minSdkVersion": 26,
+    "targetSdkVersion": 36,
+    "nativecode": [
+      "arm64-v8a",
+      "armeabi-v7a",
+      "x86",
+      "x86_64"
+    ],
+    "sig": "fc48969133192f7f9862b180fb841d96",
+    "signer": "0e3a84afeb40673f9d7edd9e8b07dabc54ef67d06c43aed0de15f86415d022d2",
+    "size": 8826213,
+    "apkName": "gymlogger-v1.2.apk",
+    "added": 1783931033.0
+  },
+  "gymlogger-v1.3.apk": {
+    "hash": "e05352cc5863580d125801aeec5da1e58e9e5781e6de8ab56b4740060797726f",
+    "hashType": "sha256",
+    "uses-permission": [
+      [
+        "com.theob.gymlogger.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
+        null
+      ]
+    ],
+    "uses-permission-sdk-23": [],
+    "features": [],
+    "icons_src": {},
+    "icons": {},
+    "antiFeatures": {},
+    "packageName": "com.theob.gymlogger",
+    "versionCode": 3,
+    "name": "GymLogger",
+    "versionName": "1.3",
+    "minSdkVersion": 26,
+    "targetSdkVersion": 36,
+    "nativecode": [
+      "arm64-v8a",
+      "armeabi-v7a",
+      "x86",
+      "x86_64"
+    ],
+    "sig": "fc48969133192f7f9862b180fb841d96",
+    "signer": "0e3a84afeb40673f9d7edd9e8b07dabc54ef67d06c43aed0de15f86415d022d2",
+    "size": 8842597,
+    "apkName": "gymlogger-v1.3.apk",
+    "added": 1783933278.0
+  }
+}

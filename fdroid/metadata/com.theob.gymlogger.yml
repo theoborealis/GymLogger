@@ -1,0 +1,21 @@
+Categories:
+  - Sports & Health
+License: AGPL-3.0-or-later
+AuthorName: theob
+SourceCode: https://github.com/theoborealis/GymLogger
+IssueTracker: https://github.com/theoborealis/GymLogger/issues
+
+Name: GymLogger
+Summary: Minimal offline workout logger
+Description: |-
+  GymLogger is a minimalist, native Android application for logging your strength
+  training sessions. It is a Material You redesign of GymLoga with a true-black
+  AMOLED theme and an auto-saving log.
+
+  Localized store text, screenshots and the icon are pulled from the project's
+  fastlane metadata at build time.
+
+# This is a binary ("local") repo: APKs are dropped in by CI rather than built by
+# fdroid, so there are no Builds and no upstream update checking.
+AutoUpdateMode: None
+UpdateCheckMode: None
